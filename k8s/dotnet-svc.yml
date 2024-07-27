@@ -8,6 +8,6 @@ spec:
   selector:
     app: dotnetapp
   ports:
-  - port: 8080 # port on the host
+  - port: 8085 # port on the host
     targetPort: 8080 # port inside the container 
   type: NodePort
