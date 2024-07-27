@@ -46,13 +46,21 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'DOCKER_HUB_PASSWORD', usernameVariable: 'DOCKER_HUB_USERNAME')]) {
                     script {
-                        withDockerRegistry(credentialsId: 'dockerhub', toolName: 'docker') {   
+                        withDockerRegistry(credentialsId: 'dockerhub', toolName: 'docker') {
                             sh 'docker build -t hrappv1 .'
                             sh 'docker tag hrappv1 engahmedabuzaid/hrappv1:latest'
                             sh 'docker push engahmedabuzaid/hrappv1:latest'
                         }
                     }
                 }
+            }
+        }
+        stage('Trivy Scan') {
+            steps {
+                sh """
+                trivy image hrappv1:latest --format template --template "@/var/lib/jenkins/trivy/trivy-html.tmpl" --output /var/lib/jenkins/trivy/trivy-report.html
+                """
+                archiveArtifacts artifacts: '/var/lib/jenkins/trivy/trivy-report.html', allowEmptyArchive: true
             }
         }
     }
