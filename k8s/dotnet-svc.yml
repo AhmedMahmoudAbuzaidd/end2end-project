@@ -6,8 +6,8 @@ metadata:
     app: dotnet-svc
 spec:
   selector:
-    app: my-app
+    app: dotnetapp
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 8080 # port on the host
+    targetPort: 8080 # port inside the container 
   type: NodePort
