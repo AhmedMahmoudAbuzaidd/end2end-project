@@ -1,0 +1,75 @@
+pipeline {
+    agent any
+    tools {
+        msbuild 'msbuild'
+        nodejs 'node'
+    }
+    environment {
+        MSBUILD_SQ_SCANNER_HOME = '/var/lib/jenkins/tools/hudson.plugins.sonar.MsBuildSQRunnerInstallation/msbuild/sonar-scanner-5.0.1.3006'
+    }
+    stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('Checkout from Git') {
+            steps {
+                git branch: 'main', url: 'https://github.com/AhmedMahmoudAbuzaidd/end-to-end-project.git'
+            }
+        }
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar') {
+                    sh """
+                    ${MSBUILD_SQ_SCANNER_HOME}/bin/sonar-scanner \
+                    -Dsonar.projectName=dotnet \
+                    -Dsonar.projectKey=dotnet \
+                    -Dsonar.host.url=http://192.168.186.134:9000
+                    """
+                }
+            }
+        }
+        stage('Quality Gate') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
+                }
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                sh 'dotnet restore'
+            }
+        }
+        stage('Docker Build & Push') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'DOCKER_HUB_PASSWORD', usernameVariable: 'DOCKER_HUB_USERNAME')]) {
+                    script {
+                        withDockerRegistry(credentialsId: 'dockerhub', toolName: 'docker') {   
+                            sh 'docker build -t hrappv1 .'
+                            sh 'docker tag hrappv1 engahmedabuzaid/hrappv1:latest'
+                            sh 'docker push engahmedabuzaid/hrappv1:latest'
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        success {
+            emailext(
+                subject: "SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+                body: "Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' succeeded.",
+                to: 'ahmedabuzaid316@gmail.com'
+            )
+        }
+        failure {
+            emailext(
+                subject: "FAILURE: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+                body: "Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' failed.",
+                to: 'ahmedabuzaid316@gmail.com'
+            )
+        }
+    }
+}

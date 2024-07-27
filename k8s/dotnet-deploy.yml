@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-deploy
+  labels:
+    app: dotnetapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dotnetapp
+  template:
+    metadata:
+      labels:
+        app: dotnetapp
+    spec:
+      containers:
+      - name: dotnet-app
+        image: engahmedabuzaid/hrappv1:latest
+        ports:
+        - containerPort: 8080
+
