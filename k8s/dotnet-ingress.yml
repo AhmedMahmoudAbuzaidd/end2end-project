@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind : Ingress
+metadata : 
+  name: dotnet
+  namespace: dotnet
+spec:
+  rules:
+  - host: dotnet.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dotnet-svc
+            port:
+              number: 8085
